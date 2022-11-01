@@ -1,3 +1,8 @@
+variable "lambda_iam_role" {
+  type        = string
+  default     = "gha-runner-lambda"
+}
+
 variable "subnet_name" {
   default = "gha-runner"
   description = "The name for the subnet used in the VPC"

@@ -26,6 +26,34 @@ module "vpc" {
   enable_dns_support = true
 }
 
+resource "aws_sqs_queue" "build" {
+  name                        = "gha-runner-builds"
+  delay_seconds               = 90
+  message_retention_seconds   = 86400
+  receive_wait_time_seconds   = 10
+}
+
+resource "aws_sqs_queue" "workflow" {
+  name                        = "gha-runner-webhook"
+  delay_seconds               = 90
+  message_retention_seconds   = 86400
+  receive_wait_time_seconds   = 10
+}
+
+module "webhook" {
+  source  = "./modules/webhook"
+  sqs_build_queue = {
+    id = aws_sqs_queue.build.id
+    arn = aws_sqs_queue.build.arn
+  }
+  sqs_workflow_job_queue = {
+    id = aws_sqs_queue.workflow.id
+    arn = aws_sqs_queue.workflow.arn
+  }
+  webhook_file_path = "./lambda/webhook/webhook.zip"
+  lambda_iam_role = var.lambda_iam_role
+}
+
 resource "aws_security_group" "gha_runner" {
   name = "${var.gha_runner_security_group_name}"
   description = "Connectivity for GHA runner instances."

@@ -1,6 +1,12 @@
 SHELL:=/bin/bash
 
 infrastructure:
+	(
+		cd lambda/webhook
+		yarn install
+		yarn run test
+		yarn dist
+	)
 	terraform init
 	terraform apply -auto-approve
 

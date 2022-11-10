@@ -27,3 +27,18 @@ variable "gha_runner_image_builder_key_name" {
   default = "gha_runner_image_builder"
   description = "The name of the keypair required for building the GHA runner AMI"
 }
+
+variable "secret_github_app_id" {
+  default = ""
+  description = "The app ID for the Github self hosted runner app. Provide value from encrypted tfvars file."
+}
+
+variable "secret_github_app_private_key_base64" {
+  default = ""
+  description = "The base64-encoded private key for the Github self hosted runner app. Provide value from encrypted tfvars file."
+}
+
+variable "secret_github_app_secret" {
+  default = ""
+  description = "The secret defined on the Github self hosted runner app. Provide value from encrypted tfvars file."
+}

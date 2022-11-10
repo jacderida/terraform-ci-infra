@@ -90,3 +90,36 @@ resource "aws_key_pair" "gha_runner_image_builder" {
   key_name = var.gha_runner_image_builder_key_name
   public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDAY9iAxRT1zBwy8Zf9p9pR0rHwEaOL/6aGsQ2X70emFDVED+ms6w0Rgm8uEaZ1g2r/MBuiz3KlNEXcBrlcPkHIX+80/3ypvJtuH2h6t56cs8lVO8PJFeaBYEJstXEOf/QKDFIUPTstZH95lnyHS+11HQ5gxlHGMHW3tepXnZ3rN5BJzGGzhEWd/U50saBRgE0g4GHGebZprGPteRNGASwJXNRIbzwNdPUbIwxQBhwVrI15Sz/o4bvjGd1AfUgy4OMbrOQPVZHFD75K1w4rQeEQ6fGGHiV1rjuKBVgyeRmqPS3rVHss3Wq11GtHTGGxsMC4OLH4zosmoMrdO4gwvl/O8T7u6LadO/7ACMqGd7ctfLAlW1jqRPz1BSxklQgwAPduvBNvV81RV6B59ChltJa83X42BG6KkJAMIyfnNchuR2BALGutILWh8ualOl501qTaF+sPVM0HqjK9ow0lRU3UX9n4RvqEmS+Onch7SiTn5tBpDmikxhboADDhyczJ0/0="
 }
+
+resource "aws_secretsmanager_secret" "github_app_id" {
+  name = "gha_runner_github_app_id"
+  # Setting the recovery window to 0 deletes the secret immediately.
+  # Otherwise it will only be marked for deletion and remain for a default period of 30 days.
+  # The default behaviour is really annoying for development.
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "github_app_id" {
+  secret_id = aws_secretsmanager_secret.github_app_id.id
+  secret_string = var.secret_github_app_id
+}
+
+resource "aws_secretsmanager_secret" "github_app_private_key_base64" {
+  name = "gha_runner_github_private_key_base64"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "github_app_private_key_base64" {
+  secret_id = aws_secretsmanager_secret.github_app_private_key_base64.id
+  secret_string = var.secret_github_app_private_key_base64
+}
+
+resource "aws_secretsmanager_secret" "github_app_secret" {
+  name = "gha_runner_github_app_secret"
+  recovery_window_in_days = 0
+}
+
+resource "aws_secretsmanager_secret_version" "github_app_secret" {
+  secret_id = aws_secretsmanager_secret.github_app_secret.id
+  secret_string = var.secret_github_app_secret
+}

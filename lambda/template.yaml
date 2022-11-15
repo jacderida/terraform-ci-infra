@@ -1,8 +1,8 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: >
-  Lambda function for launching an EC2 instance to be used as a self hosted runner for a Github
-  Actions job.
+  Lambda function for managing EC2 instances to be used as self hosted runners for Github
+  Actions jobs.
 Globals:
   Function:
     Timeout: 30
@@ -30,18 +30,18 @@ Parameters:
       Supply this value on the command line after obtaining it from the Terraform output.
     Type: String
 Resources:
-  GhaRunnerCreateInstance:
+  ManageRunners:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      ImageUri: 389640522532.dkr.ecr.eu-west-2.amazonaws.com/gha_runner_create_instance:python3.9-v1
+      ImageUri: 389640522532.dkr.ecr.eu-west-2.amazonaws.com/manage_runners:python3.9-v1
       Architectures:
         - x86_64
       Events:
-        GhaRunnerCreateInstance:
+        ManageRunners:
           Type: Api
           Properties:
-            Path: /create_instance
+            Path: /manage_runners
             Method: post
       Environment:
         Variables:
@@ -53,12 +53,12 @@ Resources:
           EC2_KEY_NAME: !Sub "${Ec2KeyName}"
           EC2_SECURITY_GROUP_ID: !Sub "${Ec2SecurityGroupId}"
           EC2_VPC_SUBNET_ID: !Sub "${Ec2VpcSubnetId}"
-      Role: arn:aws:iam::389640522532:role/gha_runner_create_instance
+      Role: arn:aws:iam::389640522532:role/manage_runners
 
 Outputs:
-  GhaRunnerCreateInstanceApi:
-    Description: "API Gateway endpoint URL for Prod stage for GhaRunnerCreateInstance function"
-    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/create_instance/"
-  GhaRunnerCreateInstanceFunction:
+  ManageRunnersApi:
+    Description: "API Gateway endpoint URL for Prod stage for ManageRunners function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/manage_runners/"
+  ManageRunnersFunction:
     Description: "GHA runner create instance Lambda function ARN"
-    Value: !GetAtt GhaRunnerCreateInstance.Arn
+    Value: !GetAtt ManageRunners.Arn

@@ -90,6 +90,11 @@ def get_registration_token():
         "Accept": "application/vnd.github+json",
     }
     response = requests.get("https://api.github.com/app/installations", headers=headers)
+    if response.status_code != 200:
+        logger.debug("Received unexpected response when requesting installation ID")
+        logger.debug(f"status_code: {response.status_code}")
+        logger.debug(f"text: {response.text}")
+        raise ConfigurationError("Unexpected response indicates configuration issue")
     json = response.json()
     installation_id = json[0]["id"]
 
@@ -150,7 +155,7 @@ def is_signature_valid(signature, payload):
     return hmac.compare_digest(digest, signature)
 
 
-def lambda_handler(event, context):
+def manage_runners(event, context):
     request_headers = event["headers"]
     if SIGNATURE_HEADER not in request_headers:
         logger.debug("The request did not contain the signature header")

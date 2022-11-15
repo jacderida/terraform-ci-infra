@@ -1,10 +1,11 @@
 import hmac
 import hashlib
 import json
+import os
 import pytest
 
-from create_instance import app
-from create_instance.app import ConfigurationError
+from manage_runners import app
+from manage_runners.app import ConfigurationError
 
 
 TEST_SECRET = "GLoA096eDGlXXF5SiCEq"
@@ -255,7 +256,41 @@ def generate_signature(secret, payload):
     return digest
 
 
-def test_lambda_handler(apigw_event, workflow_job_webhook_payload, mocker, monkeypatch):
+@pytest.mark.skip(reason="full integration test for debugging")
+def test_manage_runners_integration(apigw_event, workflow_job_webhook_payload):
+    """
+    A full integration test that can be used for debugging.
+
+    To run it, remove the skip and set all the environment variables to the values used in
+    the real environment. You also need to supply the keys of an AWS user who has
+    permission to run instances. For example:
+
+    export AWS_ACCESS_KEY_ID=<access key id>
+    export AWS_SECRET_ACCESS_KEY=<secret access key>
+    export AWS_DEFAULT_REGION=eu-west-2
+    export AMI_ID=ami-05b371382b07cb80a
+    export EC2_INSTANCE_TYPE=t2.medium
+    export EC2_KEY_NAME=gha_runner_image_builder
+    export EC2_SECURITY_GROUP_ID=sg-0f802f984aa514480
+    export EC2_VPC_SUBNET_ID=subnet-08486e3b32f903438
+    export GITHUB_APP_ID=<app id>
+    export GITHUB_APP_PRIVATE_KEY_BASE64=<base64 encoded private key>
+    export GITHUB_APP_SECRET=<app secret>
+
+    pytest --capture=no --verbose -k test_manage_runners_integration tests/
+    """
+    github_app_secret = os.getenv("GITHUB_APP_SECRET")
+    if not github_app_secret:
+        raise ConfigurationError("The GITHUB_APP_SECRET variable must be set")
+    apigw_event["body"] = workflow_job_webhook_payload
+    apigw_event["headers"]["X-Hub-Signature-256"] = generate_signature(
+        github_app_secret.encode(), workflow_job_webhook_payload.encode()
+    )
+    response = app.manage_runners(apigw_event, "")
+    print(response)
+
+
+def test_manage_runners(apigw_event, workflow_job_webhook_payload, mocker, monkeypatch):
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
     monkeypatch.setenv("EC2_INSTANCE_TYPE", "t2.medium")
     monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
@@ -268,15 +303,15 @@ def test_lambda_handler(apigw_event, workflow_job_webhook_payload, mocker, monke
         TEST_SECRET.encode(), workflow_job_webhook_payload.encode()
     )
 
-    boto_client_mock = mocker.patch("create_instance.app.boto3.client")
+    boto_client_mock = mocker.patch("manage_runners.app.boto3.client")
     boto_client_mock.return_value.run_instances.return_value = {
         "Instances": [{"InstanceId": "i-123456"}]
     }
-    registration_token_mock = mocker.patch("create_instance.app.get_registration_token")
+    registration_token_mock = mocker.patch("manage_runners.app.get_registration_token")
     registration_token_mock.return_value = "CuV2hw4Xtig5a8oYu1KL"
     spy = mocker.spy(app, "get_user_data_script")
 
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
     data = json.loads(response["body"])
     base64_encoded_user_data_script = spy.spy_return
 
@@ -295,7 +330,7 @@ def test_lambda_handler(apigw_event, workflow_job_webhook_payload, mocker, monke
     assert data["instance_id"] == "i-123456"
 
 
-def test_lambda_handler_with_in_progress_workflow_job_action(
+def test_manage_runners_with_in_progress_workflow_job_action(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
@@ -308,7 +343,7 @@ def test_lambda_handler_with_in_progress_workflow_job_action(
         TEST_SECRET.encode(), payload_with_different_action.encode()
     )
 
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
 
     assert response["statusCode"] == 200
     assert (
@@ -317,7 +352,7 @@ def test_lambda_handler_with_in_progress_workflow_job_action(
     )
 
 
-def test_lambda_handler_with_completed_workflow_job_action(
+def test_manage_runners_with_completed_workflow_job_action(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
@@ -330,7 +365,7 @@ def test_lambda_handler_with_completed_workflow_job_action(
         TEST_SECRET.encode(), payload_with_different_action.encode()
     )
 
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
 
     assert response["statusCode"] == 200
     assert (
@@ -339,7 +374,7 @@ def test_lambda_handler_with_completed_workflow_job_action(
     )
 
 
-def test_lambda_handler_with_non_self_hosted_label(
+def test_manage_runners_with_non_self_hosted_label(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
@@ -352,7 +387,7 @@ def test_lambda_handler_with_non_self_hosted_label(
         TEST_SECRET.encode(), payload_with_non_self_hosted.encode()
     )
 
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
 
     assert response["statusCode"] == 200
     assert (
@@ -361,16 +396,16 @@ def test_lambda_handler_with_non_self_hosted_label(
     )
 
 
-def test_lambda_handler_sha256_sig_not_present(
+def test_manage_runners_sha256_sig_not_present(
     apigw_event, workflow_job_webhook_payload
 ):
     apigw_event["body"] = workflow_job_webhook_payload
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
     assert response["statusCode"] == 400
     assert response["body"] == "The request did not contain the signature header"
 
 
-def test_lambda_handler_sha256_sig_does_not_match(
+def test_manage_runners_sha256_sig_does_not_match(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
@@ -378,12 +413,12 @@ def test_lambda_handler_sha256_sig_does_not_match(
     apigw_event["headers"]["X-Hub-Signature-256"] = generate_signature(
         "another secret".encode(), workflow_job_webhook_payload.encode()
     )
-    response = app.lambda_handler(apigw_event, "")
+    response = app.manage_runners(apigw_event, "")
     assert response["statusCode"] == 401
     assert response["body"] == "Signature received is not valid"
 
 
-def test_lambda_handler_github_secret_is_not_set(
+def test_manage_runners_github_secret_is_not_set(
     apigw_event, workflow_job_webhook_payload
 ):
     apigw_event["body"] = workflow_job_webhook_payload
@@ -393,10 +428,10 @@ def test_lambda_handler_github_secret_is_not_set(
     with pytest.raises(
         ConfigurationError, match="The GITHUB_APP_SECRET variable must be set"
     ):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")
 
 
-def test_lambda_handler_ami_id_is_not_set(
+def test_manage_runners_ami_id_is_not_set(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
@@ -405,10 +440,10 @@ def test_lambda_handler_ami_id_is_not_set(
         TEST_SECRET.encode(), workflow_job_webhook_payload.encode()
     )
     with pytest.raises(ConfigurationError, match="The AMI_ID variable must be set"):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")
 
 
-def test_lambda_handler_instance_type_is_not_set(
+def test_manage_runners_instance_type_is_not_set(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     apigw_event["body"] = workflow_job_webhook_payload
@@ -423,10 +458,10 @@ def test_lambda_handler_instance_type_is_not_set(
     with pytest.raises(
         ConfigurationError, match="The EC2_INSTANCE_TYPE variable must be set"
     ):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")
 
 
-def test_lambda_handler_key_name_is_not_set(
+def test_manage_runners_key_name_is_not_set(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     apigw_event["body"] = workflow_job_webhook_payload
@@ -441,10 +476,10 @@ def test_lambda_handler_key_name_is_not_set(
     with pytest.raises(
         ConfigurationError, match="The EC2_KEY_NAME variable must be set"
     ):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")
 
 
-def test_lambda_handler_security_group_id_is_not_set(
+def test_manage_runners_security_group_id_is_not_set(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     apigw_event["body"] = workflow_job_webhook_payload
@@ -459,10 +494,10 @@ def test_lambda_handler_security_group_id_is_not_set(
     with pytest.raises(
         ConfigurationError, match="The EC2_SECURITY_GROUP_ID variable must be set"
     ):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")
 
 
-def test_lambda_handler_subnet_id_is_not_set(
+def test_manage_runners_subnet_id_is_not_set(
     apigw_event, workflow_job_webhook_payload, monkeypatch
 ):
     apigw_event["body"] = workflow_job_webhook_payload
@@ -477,4 +512,4 @@ def test_lambda_handler_subnet_id_is_not_set(
     with pytest.raises(
         ConfigurationError, match="The EC2_VPC_SUBNET_ID variable must be set"
     ):
-        app.lambda_handler(apigw_event, "")
+        app.manage_runners(apigw_event, "")

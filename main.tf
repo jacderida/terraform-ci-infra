@@ -26,12 +26,8 @@ module "vpc" {
   enable_dns_support = true
 }
 
-resource "aws_ecr_repository" "gha_runner_create_instance" {
-  name = "gha_runner_create_instance"
-}
-
-resource "aws_ecr_repository" "gha_runner_terminate_instance" {
-  name = "gha_runner_terminate_instance"
+resource "aws_ecr_repository" "manage_runners" {
+  name = "manage_runners"
 }
 
 resource "aws_security_group" "gha_runner" {

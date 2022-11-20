@@ -1,4 +1,4 @@
-AWSTemplateFormatVersion: '2010-09-09'
+AWSTemplateFormatVersion: "2010-09-09"
 Transform: AWS::Serverless-2016-10-31
 Description: >
   Lambda function for managing EC2 instances to be used as self hosted runners for Github
@@ -8,11 +8,11 @@ Globals:
     Timeout: 30
 Parameters:
   AmiId:
-    Default: ami-05b371382b07cb80a
+    Default: ami-0040e65f0c9cc3b36
     Description: The AMI for the EC2 instance to be launched
     Type: String
   Ec2InstanceType:
-    Default: t2.medium
+    Default: c5.9xlarge
     Description: The size of the EC2 instance to be launched
     Type: String
   Ec2KeyName:
@@ -45,9 +45,9 @@ Resources:
             Method: post
       Environment:
         Variables:
-          GITHUB_APP_ID: '{{resolve:secretsmanager:gha_runner_github_app_id}}'
-          GITHUB_APP_PRIVATE_KEY_BASE64: '{{resolve:secretsmanager:gha_runner_github_private_key_base64}}'
-          GITHUB_APP_SECRET: '{{resolve:secretsmanager:gha_runner_github_app_secret}}'
+          GITHUB_APP_ID: "{{resolve:secretsmanager:gha_runner_github_app_id}}"
+          GITHUB_APP_PRIVATE_KEY_BASE64: "{{resolve:secretsmanager:gha_runner_github_private_key_base64}}"
+          GITHUB_APP_SECRET: "{{resolve:secretsmanager:gha_runner_github_app_secret}}"
           AMI_ID: !Sub "${AmiId}"
           EC2_INSTANCE_TYPE: !Sub "${Ec2InstanceType}"
           EC2_KEY_NAME: !Sub "${Ec2KeyName}"

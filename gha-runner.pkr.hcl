@@ -67,6 +67,13 @@ source "amazon-ebs" "ubuntu" {
   ssh_username         = var.ssh_username
   ssh_private_key_file = var.ssh_private_key_file_path
   ssh_keypair_name     = var.ssh_keypair_name
+
+  ami_block_device_mappings {
+    device_name = "/dev/sdb"
+    delete_on_termination = true
+    volume_type = "gp3"
+    volume_size = 50
+  }
 }
 
 build {

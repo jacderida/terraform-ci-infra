@@ -22,6 +22,27 @@ logger.setLevel(logging.DEBUG)
 # RunInstances API.
 USER_DATA_SCRIPT = """#!/bin/bash
 
+output=$(file -b -s /dev/nvme1n1)
+until [ "$output" == "data" ]
+do
+    echo "$output"
+    echo "disk still not mounted..."
+    output=$(file -b -s /dev/nvme1n1)
+done
+mkfs -t ext4 /dev/nvme1n1
+mkdir /mnt/data
+mount /dev/nvme1n1 /mnt/data
+
+mkdir /mnt/data/tmp
+chmod 0777 /mnt/data/tmp
+
+mkdir /mnt/data/runner
+chown ubuntu:ubuntu /mnt/data/runner
+
+mkdir /mnt/data/cargo
+chown ubuntu:ubuntu /mnt/data/cargo
+echo "CARGO_HOME=/mnt/data/cargo" >> /etc/environment
+
 su ubuntu <<'EOF'
 cd /home/ubuntu
 REGISTRATION_TOKEN="__REGISTRATION_TOKEN__"
@@ -30,6 +51,7 @@ RUNNER_VERSION="v2.299.1"
 RUNNER_ARCHIVE_NAME="actions-runner-linux-x64-2.299.1.tar.gz"
 SAFE_NETWORK_REPO_URL="https://github.com/maidsafe/safe_network"
 
+cd /mnt/data/runner
 mkdir actions-runner && cd actions-runner
 curl -O -L ${RUNNER_BASE_URL}/${RUNNER_VERSION}/${RUNNER_ARCHIVE_NAME}
 
@@ -38,8 +60,8 @@ tar xvf ${RUNNER_ARCHIVE_NAME}
   --url "${SAFE_NETWORK_REPO_URL}" --token "${REGISTRATION_TOKEN}" --labels self-hosted
 EOF
 (
-    cd /home/ubuntu/actions-runner
-    ./svc.sh install
+    cd /mnt/data/runner/actions-runner
+    ./svc.sh install ubuntu
     ./svc.sh start
 )
 """

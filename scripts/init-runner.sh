@@ -38,3 +38,8 @@ chmod +x rustup-init
 # step in an actions workflow.
 sudo ln -s ~/.cargo/bin/* /usr/local/bin
 rustup target add x86_64-unknown-linux-musl
+
+cd /tmp
+curl -O "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+unzip awscli-exe-linux-x86_64.zip
+sudo ./aws/install

@@ -185,6 +185,9 @@ def validate_env_vars():
     ami_id = os.getenv("AMI_ID")
     if not ami_id:
         raise ConfigurationError("The AMI_ID variable must be set")
+    iam_instance_profile = os.getenv("EC2_IAM_INSTANCE_PROFILE")
+    if not iam_instance_profile:
+        raise ConfigurationError("The EC2_IAM_INSTANCE_PROFILE variable must be set")
     instance_type = os.getenv("EC2_INSTANCE_TYPE")
     if not instance_type:
         raise ConfigurationError("The EC2_INSTANCE_TYPE variable must be set")
@@ -197,7 +200,14 @@ def validate_env_vars():
     subnet_id = os.getenv("EC2_VPC_SUBNET_ID")
     if not subnet_id:
         raise ConfigurationError("The EC2_VPC_SUBNET_ID variable must be set")
-    return (ami_id, instance_type, key_name, security_group_id, subnet_id)
+    return (
+        ami_id,
+        iam_instance_profile,
+        instance_type,
+        key_name,
+        security_group_id,
+        subnet_id,
+    )
 
 
 def is_signature_valid(signature, payload):
@@ -244,6 +254,7 @@ def manage_runners(event, context):
     if action == "queued":
         (
             ami_id,
+            iam_instance_profile,
             instance_type,
             key_name,
             security_group_id,
@@ -252,6 +263,7 @@ def manage_runners(event, context):
         registration_token = get_registration_token()
         user_data_script_with_token = get_user_data_script(registration_token)
         response = client.run_instances(
+            IamInstanceProfile={"Arn": iam_instance_profile},
             ImageId=ami_id,
             InstanceType=instance_type,
             KeyName=key_name,

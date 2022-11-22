@@ -2,7 +2,6 @@ import datetime
 import hmac
 import hashlib
 import json
-import os
 import pytest
 
 from dateutil.tz import tzutc
@@ -550,6 +549,10 @@ def test_manage_runners_with_queued_job(
     apigw_event, workflow_job_webhook_payload, mocker, monkeypatch
 ):
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
+    monkeypatch.setenv(
+        "EC2_IAM_INSTANCE_PROFILE",
+        "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts",
+    )
     monkeypatch.setenv("EC2_INSTANCE_TYPE", "t2.medium")
     monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
     monkeypatch.setenv("EC2_SECURITY_GROUP_ID", "sg-0f802f984aa514480")
@@ -574,6 +577,9 @@ def test_manage_runners_with_queued_job(
     base64_encoded_user_data_script = spy.spy_return
 
     boto_client_mock.return_value.run_instances.assert_called_with(
+        IamInstanceProfile={
+            "Arn": "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts"
+        },
         ImageId="ami-092fe15da02f3f1bg",
         InstanceType="t2.medium",
         KeyName="gha_runner_image_builder",
@@ -727,6 +733,10 @@ def test_manage_runners_instance_type_is_not_set(
     )
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
+    monkeypatch.setenv(
+        "EC2_IAM_INSTANCE_PROFILE",
+        "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts",
+    )
     monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
     monkeypatch.setenv("EC2_SECURITY_GROUP_ID", "sg-0f802f984aa514480")
     monkeypatch.setenv("EC2_VPC_SUBNET_ID", "subnet-08486e3b32f903438")
@@ -742,6 +752,10 @@ def test_manage_runners_key_name_is_not_set(
     apigw_event["body"] = workflow_job_webhook_payload
     apigw_event["headers"]["X-Hub-Signature-256"] = generate_signature(
         TEST_SECRET.encode(), workflow_job_webhook_payload.encode()
+    )
+    monkeypatch.setenv(
+        "EC2_IAM_INSTANCE_PROFILE",
+        "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts",
     )
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
@@ -763,6 +777,10 @@ def test_manage_runners_security_group_id_is_not_set(
     )
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
+    monkeypatch.setenv(
+        "EC2_IAM_INSTANCE_PROFILE",
+        "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts",
+    )
     monkeypatch.setenv("EC2_INSTANCE_TYPE", "t2.medium")
     monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
     monkeypatch.setenv("EC2_VPC_SUBNET_ID", "subnet-08486e3b32f903438")
@@ -781,10 +799,32 @@ def test_manage_runners_subnet_id_is_not_set(
     )
     monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
     monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
+    monkeypatch.setenv(
+        "EC2_IAM_INSTANCE_PROFILE",
+        "arn:aws:iam::389640522532:instance-profile/upload_build_artifacts",
+    )
     monkeypatch.setenv("EC2_INSTANCE_TYPE", "t2.medium")
     monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
     monkeypatch.setenv("EC2_SECURITY_GROUP_ID", "sg-0f802f984aa514480")
     with pytest.raises(
         ConfigurationError, match="The EC2_VPC_SUBNET_ID variable must be set"
+    ):
+        app.manage_runners(apigw_event, "")
+
+def test_manage_runners_iam_instance_profile_is_not_set(
+    apigw_event, workflow_job_webhook_payload, monkeypatch
+):
+    apigw_event["body"] = workflow_job_webhook_payload
+    apigw_event["headers"]["X-Hub-Signature-256"] = generate_signature(
+        TEST_SECRET.encode(), workflow_job_webhook_payload.encode()
+    )
+    monkeypatch.setenv("GITHUB_APP_SECRET", TEST_SECRET)
+    monkeypatch.setenv("AMI_ID", "ami-092fe15da02f3f1bg")
+    monkeypatch.setenv("EC2_INSTANCE_TYPE", "t2.medium")
+    monkeypatch.setenv("EC2_KEY_NAME", "gha_runner_image_builder")
+    monkeypatch.setenv("EC2_SECURITY_GROUP_ID", "sg-0f802f984aa514480")
+    monkeypatch.setenv("EC2_VPC_SUBNET_ID", "subnet-08486e3b32f903438")
+    with pytest.raises(
+        ConfigurationError, match="The EC2_IAM_INSTANCE_PROFILE variable must be set"
     ):
         app.manage_runners(apigw_event, "")

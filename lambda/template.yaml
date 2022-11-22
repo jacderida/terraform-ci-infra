@@ -8,8 +8,12 @@ Globals:
     Timeout: 30
 Parameters:
   AmiId:
-    Default: ami-0040e65f0c9cc3b36
+    Default: ami-05b4e01eee76b396b
     Description: The AMI for the EC2 instance to be launched
+    Type: String
+  Ec2IamInstanceProfile:
+    Default: arn:aws:iam::389640522532:instance-profile/upload_build_artifacts
+    Description: The ARN of the IAM instance profile for the EC2 instance to be launched
     Type: String
   Ec2InstanceType:
     Default: c5.9xlarge
@@ -49,6 +53,7 @@ Resources:
           GITHUB_APP_PRIVATE_KEY_BASE64: "{{resolve:secretsmanager:gha_runner_github_private_key_base64}}"
           GITHUB_APP_SECRET: "{{resolve:secretsmanager:gha_runner_github_app_secret}}"
           AMI_ID: !Sub "${AmiId}"
+          EC2_IAM_INSTANCE_PROFILE: !Sub "${Ec2IamInstanceProfile}"
           EC2_INSTANCE_TYPE: !Sub "${Ec2InstanceType}"
           EC2_KEY_NAME: !Sub "${Ec2KeyName}"
           EC2_SECURITY_GROUP_ID: !Sub "${Ec2SecurityGroupId}"

@@ -3,6 +3,10 @@ output "subnet_name" {
 }
 
 output "gha_runner_security_group_name" {
+  value = aws_security_group.gha_runner.id
+}
+
+output "gha_runner_image_builder_security_group_name" {
   value = aws_security_group.gha_runner_image_builder.id
 }
 

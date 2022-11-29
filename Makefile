@@ -25,7 +25,7 @@ deploy-create-instance-function:
 	)
 	docker push $$AWS_ACCOUNT_NUMBER.${REGISTRY_URI}/${REPO_NAME}:${TAG_NAME}
 	(
-		security_group_id=$$(terraform output -raw gha_runner_security_group_name | xargs)
+		security_group_id=$$(terraform output -raw gha_runner_image_security_group_name | xargs)
 		subnet_id=$$(terraform output subnet_name | xargs | awk '{ print $$2 }' | sed s/,//)
 		cd lambda
 		sam deploy \

@@ -36,6 +36,17 @@ resource "aws_security_group" "gha_runner" {
   vpc_id = module.vpc.vpc_id
 }
 
+# For using the GHA runner to launch a testnet, you need to have port 22 open, because Terraform
+# uses SSH to check if machines have become available.
+resource "aws_security_group_rule" "gha_runner_egress_ssh" {
+  type = "egress"
+  from_port = 22
+  to_port = 22
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.gha_runner.id
+}
+
 resource "aws_security_group_rule" "gha_runner_egress_https" {
   type = "egress"
   from_port = 443

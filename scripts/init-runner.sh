@@ -1,5 +1,9 @@
 #!/bin/bash
 
+TERRAFORM_VERSION="1.3.5"
+TERRAFORM_ARCHIVE_NAME="terraform_${TERRAFORM_VERSION}_linux_amd64.zip"
+TERRAFORM_URL="https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/${TERRAFORM_ARCHIVE_NAME}"
+
 sudo DEBIAN_FRONTEND=noninteractive apt update
 retry_count=1
 packages_installed="false"
@@ -8,7 +12,7 @@ while [[ $retry_count -le 20 ]]; do
   # All these packages are necessary for a full build of all safe_network code,
   # including test binaries.
   sudo DEBIAN_FRONTEND=noninteractive apt install -y \
-    build-essential docker.io git libssl-dev musl-tools pkg-config ripgrep unzip
+    build-essential docker.io git jq libssl-dev musl-tools pkg-config ripgrep unzip
   exit_code=$?
   if [[ $exit_code -eq 0 ]]; then
       echo "packages installed successfully"
@@ -43,3 +47,7 @@ cd /tmp
 curl -O "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
 unzip awscli-exe-linux-x86_64.zip
 sudo ./aws/install
+
+curl -O $TERRAFORM_URL
+unzip $TERRAFORM_ARCHIVE_NAME
+sudo mv terraform /usr/local/bin

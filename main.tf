@@ -47,6 +47,15 @@ resource "aws_security_group_rule" "gha_runner_egress_ssh" {
   security_group_id = aws_security_group.gha_runner.id
 }
 
+resource "aws_security_group_rule" "gha_runner_egress_http" {
+  type = "egress"
+  from_port = 80
+  to_port = 80
+  protocol = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.gha_runner.id
+}
+
 resource "aws_security_group_rule" "gha_runner_egress_https" {
   type = "egress"
   from_port = 443
@@ -95,7 +104,7 @@ resource "aws_security_group_rule" "gha_runner_image_builder_egress_https" {
 
 resource "aws_key_pair" "gha_runner_image_builder" {
   key_name = var.gha_runner_image_builder_key_name
-  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDAY9iAxRT1zBwy8Zf9p9pR0rHwEaOL/6aGsQ2X70emFDVED+ms6w0Rgm8uEaZ1g2r/MBuiz3KlNEXcBrlcPkHIX+80/3ypvJtuH2h6t56cs8lVO8PJFeaBYEJstXEOf/QKDFIUPTstZH95lnyHS+11HQ5gxlHGMHW3tepXnZ3rN5BJzGGzhEWd/U50saBRgE0g4GHGebZprGPteRNGASwJXNRIbzwNdPUbIwxQBhwVrI15Sz/o4bvjGd1AfUgy4OMbrOQPVZHFD75K1w4rQeEQ6fGGHiV1rjuKBVgyeRmqPS3rVHss3Wq11GtHTGGxsMC4OLH4zosmoMrdO4gwvl/O8T7u6LadO/7ACMqGd7ctfLAlW1jqRPz1BSxklQgwAPduvBNvV81RV6B59ChltJa83X42BG6KkJAMIyfnNchuR2BALGutILWh8ualOl501qTaF+sPVM0HqjK9ow0lRU3UX9n4RvqEmS+Onch7SiTn5tBpDmikxhboADDhyczJ0/0="
+  public_key = "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQC3RDMNQXEwJETQTRAG/ndJDESw5XwUR1NUxiegzOvj6pb0es3qUEcZGEUfFyVlSxyPZcCiizetHJMhRZN5qM/6UjUL7iDtWRLR3bq3I7iLTgZOs57QCQ/BEG70yah+xQRMDT5lt3lYxp4gKhDQgIdOtJJWEOg/KNnSP9SBZRR3Ris9rP8OiG7HR+QXDpDHwNXBVDjFGxAN3iN3osGwKO+KVai7OTT7mpzJJ0wbKvQOU+AdcqDE50POQBuyXDAm6j7mDrcLSUlNg3zDFvihbR6wcIAoUBJXoDC9LOtXuDwSw1AvS3dgC9Ij4R3eGHIobmK6qv8+ZPxe1BdxPVdjLCwb"
 }
 
 resource "aws_secretsmanager_secret" "github_app_id" {

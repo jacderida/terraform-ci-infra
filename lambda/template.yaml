@@ -8,7 +8,7 @@ Globals:
     Timeout: 30
 Parameters:
   AmiId:
-    Default: ami-00632730219704074
+    Default: ami-0e5143ec7835743eb
     Description: The AMI for the EC2 instance to be launched
     Type: String
   Ec2IamInstanceProfile:

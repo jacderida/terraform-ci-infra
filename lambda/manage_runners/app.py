@@ -47,8 +47,8 @@ su ubuntu <<'EOF'
 cd /home/ubuntu
 REGISTRATION_TOKEN="__REGISTRATION_TOKEN__"
 RUNNER_BASE_URL="https://github.com/actions/runner/releases/download"
-RUNNER_VERSION="v2.299.1"
-RUNNER_ARCHIVE_NAME="actions-runner-linux-x64-2.299.1.tar.gz"
+RUNNER_VERSION="v2.317.0"
+RUNNER_ARCHIVE_NAME="actions-runner-linux-x64-2.317.0.tar.gz"
 SAFE_NETWORK_REPO_URL="https://github.com/maidsafe/safe_network"
 
 cd /mnt/data/runner
